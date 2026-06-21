@@ -15,7 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -24,20 +23,17 @@ import com.cleanspace.app.core.permissions.CsPermissions
 import com.cleanspace.app.ui.components.CsBottomNav
 import com.cleanspace.app.ui.components.CsBottomNavItems
 import com.cleanspace.app.ui.components.CsTopBar
-import com.cleanspace.app.ui.screens.apps.AppManagerScreen
-import com.cleanspace.app.ui.screens.apps.sampleApps
+import com.cleanspace.app.ui.screens.apps.AppManagerRoute
 import com.cleanspace.app.ui.screens.clean.CleanHubScreen
 import com.cleanspace.app.ui.screens.clean.cleanTools
 import com.cleanspace.app.ui.screens.dashboard.DashboardScreen
 import com.cleanspace.app.ui.screens.dashboard.sampleDashboardState
 import com.cleanspace.app.ui.screens.done.DoneScreen
 import com.cleanspace.app.ui.screens.done.sampleNextSteps
-import com.cleanspace.app.ui.screens.duplicates.DuplicateFinderScreen
-import com.cleanspace.app.ui.screens.duplicates.sampleDuplicateGroups
+import com.cleanspace.app.ui.screens.duplicates.DuplicateFinderRoute
 import com.cleanspace.app.ui.screens.hidden.HiddenFoldersScreen
 import com.cleanspace.app.ui.screens.hidden.sampleHiddenFolders
-import com.cleanspace.app.ui.screens.largest.LargestFilesScreen
-import com.cleanspace.app.ui.screens.largest.sampleLargeFiles
+import com.cleanspace.app.ui.screens.largest.LargestFilesRoute
 import com.cleanspace.app.ui.screens.permission.PermissionRoute
 import com.cleanspace.app.ui.screens.scanning.ScanningScreen
 import com.cleanspace.app.ui.screens.scanning.sampleScanningState
@@ -164,25 +160,19 @@ private fun NavGraphBuilder.csGraph(
     }
     composable(Routes.SETTINGS) { SettingsPlaceholder() }
     composable(Routes.DUPLICATES) {
-        DuplicateFinderScreen(
-            groups = sampleDuplicateGroups(),
-            reclaimableLabel = "3.2 GB",
-            onBack = back,
-            onCleanAll = { navigate(Routes.DONE) },
-        )
+        DuplicateFinderRoute(onBack = back)
     }
     composable(Routes.WHATSAPP) {
         WhatsAppCleanerScreen(items = sampleWaMedia(), onBack = back, onClean = { navigate(Routes.DONE) })
     }
     composable(Routes.LARGEST) {
-        LargestFilesScreen(files = sampleLargeFiles(), onBack = back, onDelete = { navigate(Routes.DONE) })
+        LargestFilesRoute(onBack = back)
     }
     composable(Routes.HIDDEN) {
         HiddenFoldersScreen(folders = sampleHiddenFolders(), onBack = back, onDelete = { navigate(Routes.DONE) })
     }
     composable(Routes.APPS) {
-        AppManagerScreen(
-            apps = sampleApps(),
+        AppManagerRoute(
             onBack = back,
             onOpenAppSettings = openAppSettings,
             onUninstall = uninstall,
