@@ -14,3 +14,10 @@ local.properties
 /app/release
 *.apk
 *.aab
+
+# Signing secrets — NEVER commit these
+keystore.properties
+*.jks
+
+# Firebase (Crashlytics) config — contains project keys
+app/google-services.json
