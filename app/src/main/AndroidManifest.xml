@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Jaringan untuk memuat iklan -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Advertising ID (Android 13+) untuk AdMob -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
     <!-- Android 13+ granular media -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
@@ -30,6 +36,21 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CleanSpace"
         tools:targetApi="35">
+
+        <!-- AdMob App ID. NILAI INI test resmi Google.
+             TODO: ganti dengan App ID asli dari AdMob Console sebelum rilis. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+
+        <!-- Optimasi inisialisasi & loading iklan (mengurangi jank saat start) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
+            android:value="true" />
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
+            android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
