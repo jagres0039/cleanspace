@@ -5,27 +5,26 @@ import com.cleanspace.app.BuildConfig
 /**
  * Single source of truth for AdMob ad-unit ids.
  *
- * While [USE_TEST_ADS] is true (or in debug builds) we use Google's OFFICIAL
- * test ids — safe to ship during development and impossible to get banned for.
+ * Debug builds always use Google's OFFICIAL test ids (safe, never bannable).
+ * Release builds use the real ids below once [USE_TEST_ADS] is false.
  *
- * Before production: paste the real ids from the AdMob console into the PROD_*
- * constants and set [USE_TEST_ADS] = false. Also swap the test App ID in
- * AndroidManifest.xml for the real one.
+ * Publisher: ca-app-pub-1372627599973899
+ * App ID (in AndroidManifest.xml): ca-app-pub-1372627599973899~8967386576
  */
 object AdIds {
 
-    // Flip to false ONLY after the PROD_* ids below are filled in.
-    private const val USE_TEST_ADS = true
+    // false = release uses the real PROD_* ids below. Debug still uses test ids.
+    private const val USE_TEST_ADS = false
 
-    // --- Google official TEST ids ---
+    // --- Google official TEST ids (used in debug builds) ---
     private const val TEST_INTERSTITIAL = "ca-app-pub-3940256099942544/1033173712"
     private const val TEST_REWARDED = "ca-app-pub-3940256099942544/5224354917"
     private const val TEST_NATIVE = "ca-app-pub-3940256099942544/2247696110"
 
-    // --- TODO: real AdMob unit ids (production) ---
-    private const val PROD_INTERSTITIAL = "ca-app-pub-0000000000000000/0000000000"
-    private const val PROD_REWARDED = "ca-app-pub-0000000000000000/0000000000"
-    private const val PROD_NATIVE = "ca-app-pub-0000000000000000/0000000000"
+    // --- Real AdMob unit ids (production) ---
+    private const val PROD_INTERSTITIAL = "ca-app-pub-1372627599973899/1779006169" // "Space"
+    private const val PROD_REWARDED = "ca-app-pub-1372627599973899/3092087839"     // "Clean"
+    private const val PROD_NATIVE = "ca-app-pub-1372627599973899/9465924497"       // "clean"
 
     private val live: Boolean get() = !USE_TEST_ADS && !BuildConfig.DEBUG
 
