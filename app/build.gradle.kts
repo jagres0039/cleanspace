@@ -33,7 +33,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -65,4 +68,8 @@ dependencies {
     implementation(libs.work.runtime.ktx)
     implementation(libs.coil.compose)
     implementation(libs.accompanist.permissions)
+
+    // Monetization: Google AdMob + UMP (GDPR/consent)
+    implementation(libs.play.services.ads)
+    implementation(libs.user.messaging.platform)
 }
