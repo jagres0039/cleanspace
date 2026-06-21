@@ -1,5 +1,6 @@
 package com.cleanspace.app.ui.screens.clean
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,8 +18,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.cleanspace.app.ui.ads.LocalAdController
+import com.cleanspace.app.ui.ads.NativeAdSlot
 import com.cleanspace.app.ui.components.CsCallout
 import com.cleanspace.app.ui.components.CsCalloutTone
 import com.cleanspace.app.ui.components.CsCard
@@ -48,6 +52,19 @@ fun CleanHubScreen(
     onDeepClean: () -> Unit = {},
 ) {
     val ext = MaterialTheme.colorsExt
+    val adController = LocalAdController.current
+    val activity = LocalContext.current as? Activity
+
+    // Deep Clean is unlocked by watching one rewarded ad. If no ad is ready (or
+    // no Activity, e.g. preview) we just run it — never block the user.
+    val startDeepClean: () -> Unit = {
+        if (activity != null) {
+            adController.showRewarded(activity, onReward = onDeepClean, onClosed = {})
+        } else {
+            onDeepClean()
+        }
+    }
+
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         CsTopBar(title = "Bersihkan")
         LazyColumn(
@@ -74,7 +91,7 @@ fun CleanHubScreen(
                         iconTint = CsPalette.BrandGreen,
                         title = "Deep Clean",
                         subtitle = "Scan menyeluruh semua kategori",
-                        onClick = onDeepClean,
+                        onClick = startDeepClean,
                         trailing = {
                             Icon(CsIcons.ChevronRight, contentDescription = null, tint = ext.textFaint, modifier = Modifier.size(18.dp))
                         },
@@ -95,6 +112,11 @@ fun CleanHubScreen(
                         },
                     )
                 }
+            }
+            // Sponsored native card (hides itself if no ad is available).
+            item {
+                Spacer(Modifier.size(Dimens.space4))
+                NativeAdSlot()
             }
         }
     }
