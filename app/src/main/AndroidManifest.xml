@@ -37,11 +37,10 @@
         android:theme="@style/Theme.CleanSpace"
         tools:targetApi="35">
 
-        <!-- AdMob App ID. NILAI INI test resmi Google.
-             TODO: ganti dengan App ID asli dari AdMob Console sebelum rilis. -->
+        <!-- AdMob App ID asli (publisher ca-app-pub-1372627599973899) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-1372627599973899~8967386576" />
 
         <!-- Optimasi inisialisasi & loading iklan (mengurangi jank saat start) -->
         <meta-data
