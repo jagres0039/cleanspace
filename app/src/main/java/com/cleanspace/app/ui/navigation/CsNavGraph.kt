@@ -1,5 +1,6 @@
 package com.cleanspace.app.ui.navigation
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -14,12 +15,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.cleanspace.app.core.permissions.CsPermissions
+import com.cleanspace.app.ui.ads.LocalAdController
 import com.cleanspace.app.ui.components.CsBottomNav
 import com.cleanspace.app.ui.components.CsBottomNavItems
 import com.cleanspace.app.ui.components.CsTopBar
@@ -77,11 +80,18 @@ fun uninstallApp(context: Context, pkg: String) {
 fun CleanSpaceApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
+    val adController = LocalAdController.current
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route ?: Routes.DASHBOARD
 
     val startDestination = remember {
         if (CsPermissions.hasMinimum(context)) Routes.DASHBOARD else Routes.PERMISSION
+    }
+
+    // Capped interstitial: only shows when the policy gap has elapsed, then runs [done].
+    val showInterstitialThen: (() -> Unit) -> Unit = { done ->
+        val activity = context as? Activity
+        if (activity != null) adController.maybeShowInterstitial(activity, done) else done()
     }
 
     Scaffold(
@@ -120,6 +130,7 @@ fun CleanSpaceApp() {
                 back = { navController.popBackStack() },
                 openAppSettings = { pkg -> openAppStorageSettings(context, pkg) },
                 uninstall = { pkg -> uninstallApp(context, pkg) },
+                showInterstitialThen = showInterstitialThen,
             )
         }
     }
@@ -130,6 +141,7 @@ private fun NavGraphBuilder.csGraph(
     back: () -> Unit,
     openAppSettings: (String) -> Unit,
     uninstall: (String) -> Unit,
+    showInterstitialThen: (() -> Unit) -> Unit,
 ) {
     composable(Routes.DASHBOARD) {
         DashboardScreen(
@@ -186,7 +198,7 @@ private fun NavGraphBuilder.csGraph(
             freedLabel = "12.8 GB",
             filesRemovedLabel = "512 file",
             nextSteps = sampleNextSteps(),
-            onDone = back,
+            onDone = { showInterstitialThen(back) },
             onNextStep = { step -> if (step.id == "apps") navigate(Routes.APPS) else navigate(Routes.HIDDEN) },
         )
     }
