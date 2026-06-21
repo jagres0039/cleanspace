@@ -13,6 +13,9 @@ workManager = "2.10.0"
 hiltWork = "1.2.0"
 coil = "2.7.0"
 accompanistPermissions = "0.36.0"
+playServicesAds = "23.6.0"
+userMessaging = "3.1.0"
+applovinAdapter = "13.0.0.0"
 
 [libraries]
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -38,6 +41,9 @@ room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
+user-messaging-platform = { module = "com.google.android.ump:user-messaging-platform", version.ref = "userMessaging" }
+applovin-mediation = { module = "com.google.ads.mediation:applovin", version.ref = "applovinAdapter" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
