@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -84,19 +85,21 @@ fun DuplicateFinderScreen(
                 }
                 groups.forEach { group ->
                     item(key = group.id) {
-                        CsSectionLabel("${group.title} · ${group.sizeEachLabel}/file")
-                        CsCard {
-                            Column {
-                                group.items.forEachIndexed { idx, item ->
-                                    DuplicateRow(item)
-                                    if (idx != group.items.lastIndex) {
-                                        Box(
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(start = Dimens.space14)
-                                                .height(Dimens.borderHairline)
-                                                .background(ext.border),
-                                        )
+                        Column {
+                            CsSectionLabel("${group.title} · ${group.sizeEachLabel}/file")
+                            CsCard {
+                                Column {
+                                    group.items.forEachIndexed { idx, item ->
+                                        DuplicateRow(item)
+                                        if (idx != group.items.lastIndex) {
+                                            Box(
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(start = Dimens.space14)
+                                                    .height(Dimens.borderHairline)
+                                                    .background(ext.border),
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -163,8 +166,6 @@ private fun DuplicateRow(item: DuplicateItem) {
         }
     }
 }
-
-private fun Modifier.height(h: androidx.compose.ui.unit.Dp) = this.then(androidx.compose.foundation.layout.Modifier.let { androidx.compose.foundation.layout.heightModifierStub(h) })
 
 fun sampleDuplicateGroups(): List<DuplicateGroup> = listOf(
     DuplicateGroup(
