@@ -11,13 +11,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.cleanspace.app.core.permissions.CsPermissions
 import com.cleanspace.app.ui.components.CsBottomNav
 import com.cleanspace.app.ui.components.CsBottomNavItems
 import com.cleanspace.app.ui.components.CsTopBar
@@ -35,6 +38,7 @@ import com.cleanspace.app.ui.screens.hidden.HiddenFoldersScreen
 import com.cleanspace.app.ui.screens.hidden.sampleHiddenFolders
 import com.cleanspace.app.ui.screens.largest.LargestFilesScreen
 import com.cleanspace.app.ui.screens.largest.sampleLargeFiles
+import com.cleanspace.app.ui.screens.permission.PermissionRoute
 import com.cleanspace.app.ui.screens.scanning.ScanningScreen
 import com.cleanspace.app.ui.screens.scanning.sampleScanningState
 import com.cleanspace.app.ui.screens.storage.StorageOverviewScreen
@@ -43,6 +47,7 @@ import com.cleanspace.app.ui.screens.whatsapp.WhatsAppCleanerScreen
 import com.cleanspace.app.ui.screens.whatsapp.sampleWaMedia
 
 object Routes {
+    const val PERMISSION = "permission"
     const val DASHBOARD = "dashboard"
     const val STORAGE = "storage"
     const val CLEAN = "clean"
@@ -79,6 +84,10 @@ fun CleanSpaceApp() {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route ?: Routes.DASHBOARD
 
+    val startDestination = remember {
+        if (CsPermissions.hasMinimum(context)) Routes.DASHBOARD else Routes.PERMISSION
+    }
+
     Scaffold(
         bottomBar = {
             if (currentRoute in TopLevelRoutes) {
@@ -98,9 +107,18 @@ fun CleanSpaceApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Routes.DASHBOARD,
+            startDestination = startDestination,
             modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
+            composable(Routes.PERMISSION) {
+                PermissionRoute(
+                    onContinue = {
+                        navController.navigate(Routes.DASHBOARD) {
+                            popUpTo(Routes.PERMISSION) { inclusive = true }
+                        }
+                    },
+                )
+            }
             csGraph(
                 navigate = { route -> navController.navigate(route) },
                 back = { navController.popBackStack() },
