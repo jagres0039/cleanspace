@@ -17,11 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.cleanspace.app.core.permissions.CsPermissions
+import com.cleanspace.app.core.util.formatBytes
 import com.cleanspace.app.ui.ads.LocalAdController
 import com.cleanspace.app.ui.components.CsBottomNav
 import com.cleanspace.app.ui.components.CsBottomNavItems
@@ -36,8 +39,7 @@ import com.cleanspace.app.ui.screens.duplicates.DuplicateFinderRoute
 import com.cleanspace.app.ui.screens.hidden.HiddenFoldersRoute
 import com.cleanspace.app.ui.screens.largest.LargestFilesRoute
 import com.cleanspace.app.ui.screens.permission.PermissionRoute
-import com.cleanspace.app.ui.screens.scanning.ScanningScreen
-import com.cleanspace.app.ui.screens.scanning.sampleScanningState
+import com.cleanspace.app.ui.screens.scanning.ScanningRoute
 import com.cleanspace.app.ui.screens.storage.StorageOverviewRoute
 import com.cleanspace.app.ui.screens.whatsapp.WhatsAppRoute
 
@@ -54,6 +56,8 @@ object Routes {
     const val APPS = "apps"
     const val SCANNING = "scanning"
     const val DONE = "done"
+
+    fun done(freedBytes: Long, files: Int) = "$DONE?freedBytes=$freedBytes&files=$files"
 }
 
 private val TopLevelRoutes = CsBottomNavItems.map { it.route }.toSet()
@@ -88,6 +92,13 @@ fun CleanSpaceApp() {
     val showInterstitialThen: (() -> Unit) -> Unit = { done ->
         val activity = context as? Activity
         if (activity != null) adController.maybeShowInterstitial(activity, done) else done()
+    }
+
+    // Deep Clean finished — go to Done with real numbers and drop Scanning from the back stack.
+    val onDeepCleanFinished: (Long, Int) -> Unit = { freedBytes, files ->
+        navController.navigate(Routes.done(freedBytes, files)) {
+            popUpTo(Routes.SCANNING) { inclusive = true }
+        }
     }
 
     Scaffold(
@@ -127,6 +138,7 @@ fun CleanSpaceApp() {
                 openAppSettings = { pkg -> openAppStorageSettings(context, pkg) },
                 uninstall = { pkg -> uninstallApp(context, pkg) },
                 showInterstitialThen = showInterstitialThen,
+                onDeepCleanFinished = onDeepCleanFinished,
             )
         }
     }
@@ -138,6 +150,7 @@ private fun NavGraphBuilder.csGraph(
     openAppSettings: (String) -> Unit,
     uninstall: (String) -> Unit,
     showInterstitialThen: (() -> Unit) -> Unit,
+    onDeepCleanFinished: (Long, Int) -> Unit,
 ) {
     composable(Routes.DASHBOARD) {
         DashboardRoute(
@@ -185,12 +198,23 @@ private fun NavGraphBuilder.csGraph(
         )
     }
     composable(Routes.SCANNING) {
-        ScanningScreen(state = sampleScanningState())
+        ScanningRoute(
+            onFinished = onDeepCleanFinished,
+            onBack = back,
+        )
     }
-    composable(Routes.DONE) {
+    composable(
+        route = "${Routes.DONE}?freedBytes={freedBytes}&files={files}",
+        arguments = listOf(
+            navArgument("freedBytes") { type = NavType.LongType; defaultValue = 0L },
+            navArgument("files") { type = NavType.IntType; defaultValue = 0 },
+        ),
+    ) { entry ->
+        val freedBytes = entry.arguments?.getLong("freedBytes") ?: 0L
+        val files = entry.arguments?.getInt("files") ?: 0
         DoneScreen(
-            freedLabel = "12.8 GB",
-            filesRemovedLabel = "512 file",
+            freedLabel = formatBytes(freedBytes),
+            filesRemovedLabel = "$files file",
             nextSteps = sampleNextSteps(),
             onDone = { showInterstitialThen(back) },
             onNextStep = { step -> if (step.id == "apps") navigate(Routes.APPS) else navigate(Routes.HIDDEN) },
