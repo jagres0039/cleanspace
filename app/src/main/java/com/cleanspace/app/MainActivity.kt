@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
+import com.cleanspace.app.core.work.CleanWork
 import com.cleanspace.app.ui.ads.AdController
 import com.cleanspace.app.ui.ads.ConsentManager
 import com.cleanspace.app.ui.ads.LocalAdController
@@ -21,6 +22,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // Schedule the once-a-day background scan (KEEP = don't reschedule if running).
+        CleanWork.schedulePeriodicScan(this)
 
         // Gather GDPR/UMP consent first, then initialize AdMob only if allowed.
         ConsentManager(this).ensureConsent(this) { canRequestAds ->
