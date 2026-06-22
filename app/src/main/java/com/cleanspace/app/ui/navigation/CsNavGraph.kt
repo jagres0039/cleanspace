@@ -29,21 +29,17 @@ import com.cleanspace.app.ui.components.CsTopBar
 import com.cleanspace.app.ui.screens.apps.AppManagerRoute
 import com.cleanspace.app.ui.screens.clean.CleanHubScreen
 import com.cleanspace.app.ui.screens.clean.cleanTools
-import com.cleanspace.app.ui.screens.dashboard.DashboardScreen
-import com.cleanspace.app.ui.screens.dashboard.sampleDashboardState
+import com.cleanspace.app.ui.screens.dashboard.DashboardRoute
 import com.cleanspace.app.ui.screens.done.DoneScreen
 import com.cleanspace.app.ui.screens.done.sampleNextSteps
 import com.cleanspace.app.ui.screens.duplicates.DuplicateFinderRoute
-import com.cleanspace.app.ui.screens.hidden.HiddenFoldersScreen
-import com.cleanspace.app.ui.screens.hidden.sampleHiddenFolders
+import com.cleanspace.app.ui.screens.hidden.HiddenFoldersRoute
 import com.cleanspace.app.ui.screens.largest.LargestFilesRoute
 import com.cleanspace.app.ui.screens.permission.PermissionRoute
 import com.cleanspace.app.ui.screens.scanning.ScanningScreen
 import com.cleanspace.app.ui.screens.scanning.sampleScanningState
-import com.cleanspace.app.ui.screens.storage.StorageOverviewScreen
-import com.cleanspace.app.ui.screens.storage.sampleStorageOverview
-import com.cleanspace.app.ui.screens.whatsapp.WhatsAppCleanerScreen
-import com.cleanspace.app.ui.screens.whatsapp.sampleWaMedia
+import com.cleanspace.app.ui.screens.storage.StorageOverviewRoute
+import com.cleanspace.app.ui.screens.whatsapp.WhatsAppRoute
 
 object Routes {
     const val PERMISSION = "permission"
@@ -144,8 +140,7 @@ private fun NavGraphBuilder.csGraph(
     showInterstitialThen: (() -> Unit) -> Unit,
 ) {
     composable(Routes.DASHBOARD) {
-        DashboardScreen(
-            state = sampleDashboardState(),
+        DashboardRoute(
             onRecommendationClick = { rec ->
                 when (rec.id) {
                     "dup" -> navigate(Routes.DUPLICATES)
@@ -157,8 +152,7 @@ private fun NavGraphBuilder.csGraph(
         )
     }
     composable(Routes.STORAGE) {
-        StorageOverviewScreen(
-            state = sampleStorageOverview(),
+        StorageOverviewRoute(
             onBack = back,
             onCategoryClick = { navigate(Routes.LARGEST) },
         )
@@ -175,13 +169,13 @@ private fun NavGraphBuilder.csGraph(
         DuplicateFinderRoute(onBack = back)
     }
     composable(Routes.WHATSAPP) {
-        WhatsAppCleanerScreen(items = sampleWaMedia(), onBack = back, onClean = { navigate(Routes.DONE) })
+        WhatsAppRoute(onBack = back)
     }
     composable(Routes.LARGEST) {
         LargestFilesRoute(onBack = back)
     }
     composable(Routes.HIDDEN) {
-        HiddenFoldersScreen(folders = sampleHiddenFolders(), onBack = back, onDelete = { navigate(Routes.DONE) })
+        HiddenFoldersRoute(onBack = back)
     }
     composable(Routes.APPS) {
         AppManagerRoute(
