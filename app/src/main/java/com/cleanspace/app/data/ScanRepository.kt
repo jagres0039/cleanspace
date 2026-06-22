@@ -13,6 +13,9 @@ import com.cleanspace.app.core.scan.StorageScanner
 import com.cleanspace.app.core.scan.TrashManager
 import com.cleanspace.app.core.scan.WhatsAppScanner
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -64,4 +67,50 @@ class ScanRepository @Inject constructor(
         } else {
             deleter.delete(uris).consentRequest
         }
+
+    /**
+     * Deletes hidden folders/files directly by path (needs All-files access).
+     * Returns the number of paths successfully removed.
+     */
+    suspend fun deletePaths(paths: List<String>): Int = withContext(Dispatchers.IO) {
+        var removed = 0
+        for (p in paths) {
+            val ok = runCatching { File(p).deleteRecursively() }.getOrDefault(false)
+            if (ok) removed++
+        }
+        removed
+    }
+
+    /** Snapshot used by the dashboard + background worker (single media scan). */
+    data class DashboardData(
+        val summary: StorageScanner.StorageSummary,
+        val largeBytes: Long,
+        val largeCount: Int,
+        val duplicateBytes: Long,
+        val duplicateCount: Int,
+        val whatsAppBytes: Long,
+    ) {
+        /** Conservative “safe to reclaim” estimate (duplicates + WhatsApp media). */
+        val reclaimableBytes: Long get() = duplicateBytes + whatsAppBytes
+    }
+
+    suspend fun dashboard(): DashboardData = withContext(Dispatchers.IO) {
+        val files = media.scanAllFiles()
+        val summary = storageScanner.summarize(files)
+        val large = files.filter { it.sizeBytes >= LARGE_FILE_THRESHOLD }
+        val dups = duplicateScanner.findDuplicates(files)
+        val wa = whatsAppScanner.scan(files)
+        DashboardData(
+            summary = summary,
+            largeBytes = large.sumOf { it.sizeBytes },
+            largeCount = large.size,
+            duplicateBytes = dups.sumOf { it.reclaimableBytes },
+            duplicateCount = dups.sumOf { it.files.size },
+            whatsAppBytes = wa.sumOf { it.totalBytes },
+        )
+    }
+
+    companion object {
+        const val LARGE_FILE_THRESHOLD = 100L * 1024 * 1024 // 100 MB
+    }
 }
