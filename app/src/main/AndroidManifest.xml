@@ -8,6 +8,9 @@
     <!-- Advertising ID (Android 13+) untuk AdMob -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
+    <!-- Notifikasi pengingat pembersihan (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <!-- Android 13+ granular media -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
