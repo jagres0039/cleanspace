@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraphBuilder
@@ -83,8 +85,17 @@ fun CleanSpaceApp() {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route ?: Routes.DASHBOARD
 
-    // Always boot through the branded splash; it then routes to dashboard/permission.
-    val startDestination = remember { Routes.SPLASH }
+    // Show the branded splash only on a genuine cold start. This survives process
+    // death via rememberSaveable, so a recreation (e.g. returning from a system
+    // delete dialog on a low-RAM phone) lands straight on the app — not the splash.
+    val splashShown = rememberSaveable { mutableStateOf(false) }
+    val startDestination = remember {
+        when {
+            !splashShown.value -> Routes.SPLASH
+            CsPermissions.hasMinimum(context) -> Routes.DASHBOARD
+            else -> Routes.PERMISSION
+        }
+    }
 
     // Capped interstitial: only shows when the policy gap has elapsed, then runs [done].
     val showInterstitialThen: (() -> Unit) -> Unit = { done ->
@@ -124,6 +135,7 @@ fun CleanSpaceApp() {
             composable(Routes.SPLASH) {
                 SplashScreen(
                     onFinished = {
+                        splashShown.value = true
                         val next = if (CsPermissions.hasMinimum(context)) Routes.DASHBOARD else Routes.PERMISSION
                         navController.navigate(next) {
                             popUpTo(Routes.SPLASH) { inclusive = true }
@@ -175,7 +187,14 @@ private fun NavGraphBuilder.csGraph(
     composable(Routes.STORAGE) {
         StorageOverviewRoute(
             onBack = back,
-            onCategoryClick = { navigate(Routes.LARGEST) },
+            onCategoryClick = { category ->
+                // Route each storage category to the screen that actually manages it.
+                when (category.id) {
+                    "apps" -> navigate(Routes.APPS)
+                    "wa" -> navigate(Routes.WHATSAPP)
+                    else -> navigate(Routes.LARGEST)
+                }
+            },
         )
     }
     composable(Routes.CLEAN) {
