@@ -249,12 +249,10 @@ private fun rateApp(context: Context) {
 }
 
 private fun shareApp(context: Context) {
+    val url = "https://play.google.com/store/apps/details?id=" + context.packageName
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
-        putExtra(
-            Intent.EXTRA_TEXT,
-            "Coba CleanSpace buat bersihin sampah HP: https://play.google.com/store/apps/details?id=${context.packageName}",
-        )
+        putExtra(Intent.EXTRA_TEXT, "Coba CleanSpace buat bersihin sampah HP: " + url)
     }
     runCatching {
         context.startActivity(Intent.createChooser(send, "Bagikan").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
