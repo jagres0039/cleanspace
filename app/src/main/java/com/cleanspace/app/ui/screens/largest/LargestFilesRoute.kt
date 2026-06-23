@@ -20,6 +20,8 @@ fun LargestFilesRoute(
     vm: LargestFilesViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
+    val title = vm.title
+    val isCategory = vm.isCategoryView
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -34,15 +36,19 @@ fun LargestFilesRoute(
     }
 
     when (val s = state) {
-        is ScanUiState.Loading -> ScanLoading("File besar", "Memindai file ≥ 100 MB…", onBack)
+        is ScanUiState.Loading -> ScanLoading(
+            title,
+            if (isCategory) "Memindai file …" else "Memindai file ≥ 100 MB…",
+            onBack,
+        )
         is ScanUiState.NeedsPermission -> ScanMessage(
-            title = "File besar",
-            message = "Butuh izin akses media buat memindai file besar.",
+            title = title,
+            message = "Butuh izin akses media buat memindai file.",
             icon = CsIcons.ShieldCheck,
             onBack = onBack,
         )
         is ScanUiState.Error -> ScanMessage(
-            title = "File besar",
+            title = title,
             message = s.message,
             actionLabel = "Coba lagi",
             onAction = { vm.load() },
@@ -51,14 +57,19 @@ fun LargestFilesRoute(
         is ScanUiState.Ready -> {
             if (s.data.isEmpty()) {
                 ScanMessage(
-                    title = "File besar",
-                    message = "Nggak ada file di atas 100 MB. Mantap, storage kamu rapi! 🎉",
+                    title = title,
+                    message = if (isCategory) {
+                        "Nggak ada file di kategori ini. Mantap, bersih! \uD83C\uDF89"
+                    } else {
+                        "Nggak ada file di atas 100 MB. Mantap, storage kamu rapi! \uD83C\uDF89"
+                    },
                     icon = CsIcons.CheckCircle,
                     onBack = onBack,
                 )
             } else {
                 LargestFilesScreen(
                     files = s.data,
+                    title = title,
                     onBack = onBack,
                     onDelete = { ids -> vm.delete(ids) },
                 )
