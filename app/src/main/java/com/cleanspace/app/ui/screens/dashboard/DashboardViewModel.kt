@@ -42,6 +42,9 @@ class DashboardViewModel @Inject constructor(
 
     private fun ScanRepository.DashboardData.toState(): DashboardState {
         val recs = buildList {
+            if (junkAndCacheBytes > 0) add(
+                Recommendation("junk", CsIcons.Trash, CsPalette.Chart5, "Sampah & cache", "$junkCount file temp, thumbnail & cache aplikasi", formatBytes(junkAndCacheBytes)),
+            )
             if (duplicateBytes > 0) add(
                 Recommendation("dup", CsIcons.Copy, CsPalette.Chart8, "File duplikat", "$duplicateCount file kembar", formatBytes(duplicateBytes)),
             )
