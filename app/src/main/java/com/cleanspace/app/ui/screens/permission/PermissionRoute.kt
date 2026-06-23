@@ -1,6 +1,8 @@
 package com.cleanspace.app.ui.screens.permission
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -209,8 +211,8 @@ private fun PermissionStep(
 }
 
 private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
-    this.then(androidx.compose.foundation.clickable(
+    this.clickable(
+        interactionSource = MutableInteractionSource(),
         indication = null,
-        interactionSource = androidx.compose.foundation.interaction.MutableInteractionSource(),
         onClick = onClick,
-    ))
+    )
