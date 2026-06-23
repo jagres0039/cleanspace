@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -73,6 +74,7 @@ private fun openPreview(context: Context, uri: String?, mime: String?) {
 fun LargestFilesScreen(
     files: List<LargeFile>,
     modifier: Modifier = Modifier,
+    title: String = "File besar",
     onBack: () -> Unit = {},
     onDelete: (List<String>) -> Unit = {},
 ) {
@@ -82,7 +84,7 @@ fun LargestFilesScreen(
     val selectedIds = selected.filterValues { it }.keys.toList()
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
-            CsTopBar(title = "File besar", onBack = onBack, actionIcon = CsIcons.Search, onAction = {})
+            CsTopBar(title = title, onBack = onBack, actionIcon = CsIcons.Search, onAction = {})
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
@@ -124,7 +126,7 @@ fun LargestFilesScreen(
                             }
                             Spacer(Modifier.size(Dimens.space12))
                             Column(Modifier.weight(1f)) {
-                                Text(f.name, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                                Text(f.name, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(f.meta, style = MaterialTheme.typography.bodySmall, color = ext.textSoft)
                             }
                             Spacer(Modifier.size(Dimens.space10))
