@@ -61,17 +61,20 @@ class DuplicateFinderViewModel @Inject constructor(
 
     fun cleanAll() {
         viewModelScope.launch {
-            val uris = sets.flatMap { set ->
+            // Keep one copy per set; delete the rest. Media goes to the system
+            // trash, non-media (zip/apk/docs) is removed by path — deleteScanned
+            // handles the split.
+            val targets = sets.flatMap { set ->
                 val keeperId = repo.keeperOf(set).id
-                set.files.filter { it.id != keeperId }.map { it.uri }
+                set.files.filter { it.id != keeperId }
             }
-            if (uris.isEmpty()) return@launch
+            if (targets.isEmpty()) return@launch
             // Wrap the delete-request build: some OEM ROMs throw here, and an
             // uncaught error in this coroutine would crash + restart the app
             // (looked like "kembali ke home"). On failure we show an error instead.
-            runCatching { repo.trashOrDelete(uris) }
-                .onSuccess { sender ->
-                    if (sender != null) _confirm.emit(sender) else load()
+            runCatching { repo.deleteScanned(targets) }
+                .onSuccess { outcome ->
+                    if (outcome.confirmRequest != null) _confirm.emit(outcome.confirmRequest) else load()
                 }
                 .onFailure {
                     _state.value = ScanUiState.Error(
