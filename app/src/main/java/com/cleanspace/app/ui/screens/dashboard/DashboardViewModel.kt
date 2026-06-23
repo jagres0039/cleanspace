@@ -33,10 +33,19 @@ class DashboardViewModel @Inject constructor(
                 _state.value = ScanUiState.NeedsPermission
                 return@launch
             }
-            _state.value = ScanUiState.Loading
+            // Keep showing the previous data while refreshing instead of flashing the spinner.
+            if (_state.value !is ScanUiState.Ready) _state.value = ScanUiState.Loading
+            // Phase 1 — fast glance so the dashboard paints almost immediately.
+            runCatching { repo.quickGlance() }
+                .onSuccess { _state.value = ScanUiState.Ready(it.toState()) }
+                .onFailure {
+                    if (_state.value !is ScanUiState.Ready) {
+                        _state.value = ScanUiState.Error(it.message ?: "Gagal memindai")
+                    }
+                }
+            // Phase 2 — full scan (duplicates + junk) refines the numbers in place.
             runCatching { repo.dashboard() }
                 .onSuccess { _state.value = ScanUiState.Ready(it.toState()) }
-                .onFailure { _state.value = ScanUiState.Error(it.message ?: "Gagal memindai") }
         }
     }
 
