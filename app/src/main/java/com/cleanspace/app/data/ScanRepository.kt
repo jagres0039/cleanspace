@@ -134,6 +134,30 @@ class ScanRepository @Inject constructor(
             get() = duplicateBytes + whatsAppBytes + junkBytes + ownCacheBytes
     }
 
+    /**
+     * Fast first-paint pass for the dashboard: one media scan → storage summary,
+     * large files, WhatsApp media + own cache. Skips the expensive duplicate
+     * hashing and hidden-folder walk so the screen appears almost instantly;
+     * [dashboard] then refines those numbers in the background.
+     */
+    suspend fun quickGlance(): DashboardData = withContext(Dispatchers.IO) {
+        val files = media.scanAllFiles()
+        val summary = storageScanner.summarize(files)
+        val large = files.filter { it.sizeBytes >= LARGE_FILE_THRESHOLD }
+        val wa = whatsAppScanner.scan(files)
+        DashboardData(
+            summary = summary,
+            largeBytes = large.sumOf { it.sizeBytes },
+            largeCount = large.size,
+            duplicateBytes = 0L,
+            duplicateCount = 0,
+            whatsAppBytes = wa.sumOf { it.totalBytes },
+            junkBytes = 0L,
+            junkCount = 0,
+            ownCacheBytes = ownCacheBytes(),
+        )
+    }
+
     suspend fun dashboard(): DashboardData = withContext(Dispatchers.IO) {
         val files = media.scanAllFiles()
         val summary = storageScanner.summarize(files)
