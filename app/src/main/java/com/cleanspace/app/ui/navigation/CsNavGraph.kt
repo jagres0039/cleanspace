@@ -7,15 +7,12 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,7 +25,6 @@ import com.cleanspace.app.core.util.formatBytes
 import com.cleanspace.app.ui.ads.LocalAdController
 import com.cleanspace.app.ui.components.CsBottomNav
 import com.cleanspace.app.ui.components.CsBottomNavItems
-import com.cleanspace.app.ui.components.CsTopBar
 import com.cleanspace.app.ui.screens.apps.AppManagerRoute
 import com.cleanspace.app.ui.screens.clean.CleanHubScreen
 import com.cleanspace.app.ui.screens.clean.cleanTools
@@ -40,10 +36,13 @@ import com.cleanspace.app.ui.screens.hidden.HiddenFoldersRoute
 import com.cleanspace.app.ui.screens.largest.LargestFilesRoute
 import com.cleanspace.app.ui.screens.permission.PermissionRoute
 import com.cleanspace.app.ui.screens.scanning.ScanningRoute
+import com.cleanspace.app.ui.screens.settings.SettingsScreen
+import com.cleanspace.app.ui.screens.splash.SplashScreen
 import com.cleanspace.app.ui.screens.storage.StorageOverviewRoute
 import com.cleanspace.app.ui.screens.whatsapp.WhatsAppRoute
 
 object Routes {
+    const val SPLASH = "splash"
     const val PERMISSION = "permission"
     const val DASHBOARD = "dashboard"
     const val STORAGE = "storage"
@@ -84,9 +83,8 @@ fun CleanSpaceApp() {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route ?: Routes.DASHBOARD
 
-    val startDestination = remember {
-        if (CsPermissions.hasMinimum(context)) Routes.DASHBOARD else Routes.PERMISSION
-    }
+    // Always boot through the branded splash; it then routes to dashboard/permission.
+    val startDestination = remember { Routes.SPLASH }
 
     // Capped interstitial: only shows when the policy gap has elapsed, then runs [done].
     val showInterstitialThen: (() -> Unit) -> Unit = { done ->
@@ -123,6 +121,16 @@ fun CleanSpaceApp() {
             startDestination = startDestination,
             modifier = Modifier.fillMaxSize().padding(innerPadding),
         ) {
+            composable(Routes.SPLASH) {
+                SplashScreen(
+                    onFinished = {
+                        val next = if (CsPermissions.hasMinimum(context)) Routes.DASHBOARD else Routes.PERMISSION
+                        navController.navigate(next) {
+                            popUpTo(Routes.SPLASH) { inclusive = true }
+                        }
+                    },
+                )
+            }
             composable(Routes.PERMISSION) {
                 PermissionRoute(
                     onContinue = {
@@ -177,7 +185,7 @@ private fun NavGraphBuilder.csGraph(
             onDeepClean = { navigate(Routes.SCANNING) },
         )
     }
-    composable(Routes.SETTINGS) { SettingsPlaceholder() }
+    composable(Routes.SETTINGS) { SettingsScreen() }
     composable(Routes.DUPLICATES) {
         DuplicateFinderRoute(onBack = back)
     }
@@ -218,19 +226,6 @@ private fun NavGraphBuilder.csGraph(
             nextSteps = sampleNextSteps(),
             onDone = { showInterstitialThen(back) },
             onNextStep = { step -> if (step.id == "apps") navigate(Routes.APPS) else navigate(Routes.HIDDEN) },
-        )
-    }
-}
-
-@Composable
-private fun SettingsPlaceholder() {
-    androidx.compose.foundation.layout.Column(Modifier.fillMaxSize()) {
-        CsTopBar(title = "Setelan")
-        Text(
-            "Setelan — segera hadir",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(16.dp),
         )
     }
 }
