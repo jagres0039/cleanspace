@@ -54,8 +54,9 @@ data class AppEntry(
 
 /**
  * App Manager (policy-compliant):
- * - "Hapus cache" deep-links to each app's system settings (Storage) page.
- *   Android does not allow silently clearing another app's cache since API 23.
+ * - "Cache & data" deep-links to each app's system App Info (Storage) page,
+ *   where the user can clear cache AND clear data in one place. Android does not
+ *   allow silently clearing another app's cache/data since API 23.
  * - "Uninstall" launches the official Android uninstall dialog.
  */
 @Composable
@@ -88,7 +89,7 @@ fun AppManagerScreen(
         ) {
             item {
                 CsCallout(
-                    text = "Demi keamanan Android, cache app lain dibersihkan lewat halaman setelan resmi. CleanSpace mengarahkan kamu ke sana dalam sekali tap.",
+                    text = "Demi keamanan Android, cache & data app lain dibersihkan lewat halaman App Info resmi — CleanSpace mengarahkan kamu ke sana dalam sekali tap. Uninstall pakai dialog resmi Android.",
                     tone = CsCalloutTone.Info,
                 )
                 Spacer(Modifier.size(Dimens.space4))
@@ -115,7 +116,7 @@ fun AppManagerScreen(
                         Row(horizontalArrangement = Arrangement.spacedBy(Dimens.space8)) {
                             Box(Modifier.weight(1f)) {
                                 CsButton(
-                                    label = "Hapus cache",
+                                    label = "Cache & data",
                                     onClick = { onOpenAppSettings(app.packageName) },
                                     style = CsButtonStyle.Secondary,
                                     leadingIcon = CsIcons.Trash,
