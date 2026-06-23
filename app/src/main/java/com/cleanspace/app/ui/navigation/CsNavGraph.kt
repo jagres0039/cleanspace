@@ -59,6 +59,9 @@ object Routes {
     const val DONE = "done"
 
     fun done(freedBytes: Long, files: Int) = "$DONE?freedBytes=$freedBytes&files=$files"
+
+    /** Large-files screen filtered to a single MediaCategory (by enum name). */
+    fun categoryFiles(categoryId: String) = "$LARGEST?category=$categoryId"
 }
 
 private val TopLevelRoutes = CsBottomNavItems.map { it.route }.toSet()
@@ -188,12 +191,10 @@ private fun NavGraphBuilder.csGraph(
         StorageOverviewRoute(
             onBack = back,
             onCategoryClick = { category ->
-                // Route each storage category to the screen that actually manages it.
-                when (category.id) {
-                    "apps" -> navigate(Routes.APPS)
-                    "wa" -> navigate(Routes.WHATSAPP)
-                    else -> navigate(Routes.LARGEST)
-                }
+                // Storage categories are MediaCategory names (IMAGE, VIDEO, APK, …).
+                // Open a file list filtered to that category instead of dumping
+                // everything into the generic "File besar" screen.
+                navigate(Routes.categoryFiles(category.id))
             },
         )
     }
@@ -211,7 +212,12 @@ private fun NavGraphBuilder.csGraph(
     composable(Routes.WHATSAPP) {
         WhatsAppRoute(onBack = back)
     }
-    composable(Routes.LARGEST) {
+    composable(
+        route = "${Routes.LARGEST}?category={category}",
+        arguments = listOf(
+            navArgument("category") { type = NavType.StringType; defaultValue = "" },
+        ),
+    ) {
         LargestFilesRoute(onBack = back)
     }
     composable(Routes.HIDDEN) {
