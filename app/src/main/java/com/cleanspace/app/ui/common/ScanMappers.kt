@@ -51,6 +51,10 @@ fun categoryLabel(category: MediaCategory): String = when (category) {
     MediaCategory.OTHER -> "Lainnya"
 }
 
+/** A content:// uri Coil can render a thumbnail from — only images & videos. */
+private fun ScannedFile.previewUriOrNull(): String? =
+    if (category == MediaCategory.IMAGE || category == MediaCategory.VIDEO) uri.toString() else null
+
 fun ScannedFile.toLargeFile(): LargeFile = LargeFile(
     id = id.toString(),
     icon = iconFor(category),
@@ -58,6 +62,8 @@ fun ScannedFile.toLargeFile(): LargeFile = LargeFile(
     name = name,
     meta = "${categoryLabel(category)} · ${formatRelativeTime(dateModifiedMillis)}",
     sizeLabel = formatBytes(sizeBytes),
+    previewUri = previewUriOrNull(),
+    mime = mimeType,
 )
 
 fun DuplicateSet.toGroup(keeperId: Long): DuplicateGroup {
@@ -72,6 +78,8 @@ fun DuplicateSet.toGroup(keeperId: Long): DuplicateGroup {
                 name = f.name,
                 meta = "${formatBytes(f.sizeBytes)} · ${formatRelativeTime(f.dateModifiedMillis)}",
                 isBest = f.id == keeper.id,
+                previewUri = f.previewUriOrNull(),
+                mime = f.mimeType,
             )
         },
     )
