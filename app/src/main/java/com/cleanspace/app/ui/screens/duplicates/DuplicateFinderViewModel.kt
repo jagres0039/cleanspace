@@ -66,8 +66,18 @@ class DuplicateFinderViewModel @Inject constructor(
                 set.files.filter { it.id != keeperId }.map { it.uri }
             }
             if (uris.isEmpty()) return@launch
-            val sender = repo.trashOrDelete(uris)
-            if (sender != null) _confirm.emit(sender) else load()
+            // Wrap the delete-request build: some OEM ROMs throw here, and an
+            // uncaught error in this coroutine would crash + restart the app
+            // (looked like "kembali ke home"). On failure we show an error instead.
+            runCatching { repo.trashOrDelete(uris) }
+                .onSuccess { sender ->
+                    if (sender != null) _confirm.emit(sender) else load()
+                }
+                .onFailure {
+                    _state.value = ScanUiState.Error(
+                        it.message ?: "Gagal menghapus duplikat. Coba lagi.",
+                    )
+                }
         }
     }
 
