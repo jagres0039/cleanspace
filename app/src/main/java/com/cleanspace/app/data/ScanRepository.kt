@@ -1,12 +1,14 @@
 package com.cleanspace.app.data
 
 import android.content.Context
+import android.content.IntentSender
 import android.net.Uri
 import com.cleanspace.app.core.scan.AppScanner
 import com.cleanspace.app.core.scan.DuplicateScanner
 import com.cleanspace.app.core.scan.DuplicateSet
 import com.cleanspace.app.core.scan.FileDeleter
 import com.cleanspace.app.core.scan.HiddenScanner
+import com.cleanspace.app.core.scan.MediaCategory
 import com.cleanspace.app.core.scan.MediaScanner
 import com.cleanspace.app.core.scan.ScannedFile
 import com.cleanspace.app.core.scan.StorageScanner
@@ -67,6 +69,65 @@ class ScanRepository @Inject constructor(
         } else {
             deleter.delete(uris).consentRequest
         }
+
+    /** Outcome of a mixed delete: media via system dialog, non-media by path. */
+    data class DeleteOutcome(
+        /** Launch this to confirm the media items (trash/delete dialog), or null. */
+        val confirmRequest: IntentSender?,
+        /** Non-media files (zip/apk/docs) removed immediately by path. */
+        val directDeletedCount: Int,
+        /** Bytes freed by the direct (non-media) deletions. */
+        val directDeletedBytes: Long,
+    )
+
+    private val mediaCategories = setOf(MediaCategory.IMAGE, MediaCategory.VIDEO, MediaCategory.AUDIO)
+
+    /**
+     * Deletes a mixed selection of [files]:
+     *  - Images/video/audio go through the restorable system trash (one dialog).
+     *    The returned [DeleteOutcome.confirmRequest] must be launched by the UI.
+     *  - Non-media (zip, apk, documents, other) can't use the MediaStore trash
+     *    API (\"All requested items must be Media items\"), so they're deleted
+     *    directly by file path using All-files access. These are permanent.
+     */
+    suspend fun deleteScanned(files: List<ScannedFile>): DeleteOutcome = withContext(Dispatchers.IO) {
+        if (files.isEmpty()) return@withContext DeleteOutcome(null, 0, 0L)
+        val mediaItems = files.filter { it.category in mediaCategories }
+        val nonMedia = files.filterNot { it.category in mediaCategories }
+
+        var deletedCount = 0
+        var deletedBytes = 0L
+        for (f in nonMedia) {
+            if (deleteOneByPath(f)) {
+                deletedCount++
+                deletedBytes += f.sizeBytes
+            }
+        }
+
+        val request = if (mediaItems.isNotEmpty()) trashOrDelete(mediaItems.map { it.uri }) else null
+        DeleteOutcome(
+            confirmRequest = request,
+            directDeletedCount = deletedCount,
+            directDeletedBytes = deletedBytes,
+        )
+    }
+
+    /**
+     * Deletes one non-media file by its raw path (needs All-files access), then
+     * best-effort removes its stale MediaStore index row. Returns true when the
+     * underlying file was actually removed.
+     */
+    private fun deleteOneByPath(file: ScannedFile): Boolean {
+        val path = file.path
+        val removed = if (!path.isNullOrBlank()) {
+            runCatching { File(path).let { it.exists() && it.delete() } }.getOrDefault(false)
+        } else {
+            false
+        }
+        // Drop the MediaStore row so it doesn't linger in future scans.
+        runCatching { context.contentResolver.delete(file.uri, null, null) }
+        removed
+    }
 
     /**
      * Deletes hidden folders/files directly by path (needs All-files access).
