@@ -98,6 +98,7 @@ dependencies {
 
     implementation(libs.work.runtime.ktx)
     implementation(libs.coil.compose)
+    implementation(libs.coil.video)
     implementation(libs.accompanist.permissions)
 
     // Monetization: Google AdMob + UMP (GDPR/consent)
