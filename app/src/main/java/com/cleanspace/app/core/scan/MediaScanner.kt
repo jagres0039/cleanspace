@@ -3,6 +3,7 @@ package com.cleanspace.app.core.scan
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import com.cleanspace.app.core.util.LARGE_FILE_THRESHOLD_BYTES
@@ -63,7 +64,13 @@ class MediaScanner(private val context: Context) {
                 val path = if (c.isNull(dataCol)) null else c.getString(dataCol)
                 // DATE_MODIFIED is in seconds.
                 val modified = c.getLong(dateCol) * 1000L
-                val uri = ContentUris.withAppendedId(collection, id)
+                val category = categoryFor(mime, name)
+                // IMPORTANT: build the uri from the TYPE-SPECIFIC media collection
+                // (images/video/audio). MediaStore.createTrashRequest /
+                // createDeleteRequest reject generic "files" uris with
+                // "All requested items must be Media items". Non-media keep the
+                // files collection uri (deleted via path / resolver fallback).
+                val uri = mediaUriFor(category, id)
                 results += ScannedFile(
                     id = id,
                     uri = uri,
@@ -72,11 +79,36 @@ class MediaScanner(private val context: Context) {
                     sizeBytes = size,
                     mimeType = mime,
                     dateModifiedMillis = modified,
-                    category = categoryFor(mime, name),
+                    category = category,
                 )
             }
         }
         results
+    }
+
+    /**
+     * Returns the content:// uri in the correct MediaStore collection for [id].
+     * Images/Video/Audio go to their typed collections so the system trash &
+     * delete request APIs accept them; everything else stays in Files.
+     */
+    private fun mediaUriFor(category: MediaCategory, id: Long): Uri {
+        val base = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            when (category) {
+                MediaCategory.IMAGE -> MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+                MediaCategory.VIDEO -> MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+                MediaCategory.AUDIO -> MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+                else -> MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            when (category) {
+                MediaCategory.IMAGE -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                MediaCategory.VIDEO -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                MediaCategory.AUDIO -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                else -> MediaStore.Files.getContentUri("external")
+            }
+        }
+        return ContentUris.withAppendedId(base, id)
     }
 
     /**
