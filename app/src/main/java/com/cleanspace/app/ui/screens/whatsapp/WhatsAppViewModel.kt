@@ -58,20 +58,29 @@ class WhatsAppViewModel @Inject constructor(
             val idSet = ids.toSet()
             val uris = scanned.filter { it.id.toString() in idSet }.map { it.uri }
             if (uris.isEmpty()) return@launch
-            val sender = repo.trashOrDelete(uris)
-            if (sender != null) _confirm.emit(sender) else load()
+            // Guard the system delete-request build so a thrown error can't crash the app.
+            runCatching { repo.trashOrDelete(uris) }
+                .onSuccess { sender -> if (sender != null) _confirm.emit(sender) else load() }
+                .onFailure { _state.value = ScanUiState.Error(it.message ?: "Gagal menghapus media") }
         }
     }
 
     fun onConfirmed() = load()
 
-    private fun ScannedFile.toItem(bucket: WaBucket): WaMediaItem = WaMediaItem(
-        id = id.toString(),
-        type = bucket.toType(),
-        name = name,
-        meta = "${bucket.label()} · ${formatRelativeTime(dateModifiedMillis)}",
-        sizeLabel = formatBytes(sizeBytes),
-    )
+    private fun ScannedFile.toItem(bucket: WaBucket): WaMediaItem {
+        val type = bucket.toType()
+        // Only photos & videos get a real thumbnail; others fall back to an icon.
+        val preview = if (type == WaMediaType.Photo || type == WaMediaType.Video) uri.toString() else null
+        return WaMediaItem(
+            id = id.toString(),
+            type = type,
+            name = name,
+            meta = "${bucket.label()} · ${formatRelativeTime(dateModifiedMillis)}",
+            sizeLabel = formatBytes(sizeBytes),
+            previewUri = preview,
+            mime = mimeType,
+        )
+    }
 
     private fun WaBucket.toType(): WaMediaType = when (this) {
         WaBucket.VIDEO -> WaMediaType.Video
