@@ -81,6 +81,35 @@ class ScanRepository @Inject constructor(
         removed
     }
 
+    /**
+     * Size of CleanSpace's OWN cache (internal + external). This is the only
+     * cache we are allowed to clear silently — third-party app caches can't be
+     * touched without the system Settings UI (Play policy compliant).
+     */
+    fun ownCacheBytes(): Long =
+        dirSize(context.cacheDir) + dirSize(context.externalCacheDir)
+
+    /** Clears CleanSpace's own cache. Returns the number of bytes freed. */
+    suspend fun clearOwnCache(): Long = withContext(Dispatchers.IO) {
+        val before = ownCacheBytes()
+        runCatching { context.cacheDir?.deleteRecursively() }
+        runCatching { context.externalCacheDir?.deleteRecursively() }
+        (before - ownCacheBytes()).coerceAtLeast(0L)
+    }
+
+    private fun dirSize(dir: File?): Long {
+        if (dir == null || !dir.exists()) return 0L
+        var total = 0L
+        val stack = ArrayDeque<File>()
+        stack.addLast(dir)
+        while (stack.isNotEmpty()) {
+            val f = stack.removeLast()
+            val kids = f.listFiles() ?: continue
+            for (k in kids) if (k.isFile) total += k.length() else stack.addLast(k)
+        }
+        return total
+    }
+
     /** Snapshot used by the dashboard + background worker (single media scan). */
     data class DashboardData(
         val summary: StorageScanner.StorageSummary,
@@ -89,9 +118,20 @@ class ScanRepository @Inject constructor(
         val duplicateBytes: Long,
         val duplicateCount: Int,
         val whatsAppBytes: Long,
+        val junkBytes: Long,
+        val junkCount: Int,
+        val ownCacheBytes: Long,
     ) {
-        /** Conservative “safe to reclaim” estimate (duplicates + WhatsApp media). */
-        val reclaimableBytes: Long get() = duplicateBytes + whatsAppBytes
+        /** Junk files + CleanSpace's own cache — the part we can clean directly. */
+        val junkAndCacheBytes: Long get() = junkBytes + ownCacheBytes
+
+        /**
+         * Conservative “safe to reclaim” estimate: duplicates + WhatsApp media +
+         * junk (temp/thumbnails/leftovers) + the app's own cache. Excludes other
+         * apps' caches, which Android won't let us delete silently.
+         */
+        val reclaimableBytes: Long
+            get() = duplicateBytes + whatsAppBytes + junkBytes + ownCacheBytes
     }
 
     suspend fun dashboard(): DashboardData = withContext(Dispatchers.IO) {
@@ -100,6 +140,8 @@ class ScanRepository @Inject constructor(
         val large = files.filter { it.sizeBytes >= LARGE_FILE_THRESHOLD }
         val dups = duplicateScanner.findDuplicates(files)
         val wa = whatsAppScanner.scan(files)
+        // Only the safe (pre-selectable) junk counts toward the reclaimable total.
+        val junk = hiddenScanner.scan().filter { it.safe }
         DashboardData(
             summary = summary,
             largeBytes = large.sumOf { it.sizeBytes },
@@ -107,6 +149,9 @@ class ScanRepository @Inject constructor(
             duplicateBytes = dups.sumOf { it.reclaimableBytes },
             duplicateCount = dups.sumOf { it.files.size },
             whatsAppBytes = wa.sumOf { it.totalBytes },
+            junkBytes = junk.sumOf { it.sizeBytes },
+            junkCount = junk.sumOf { it.itemCount },
+            ownCacheBytes = ownCacheBytes(),
         )
     }
 
