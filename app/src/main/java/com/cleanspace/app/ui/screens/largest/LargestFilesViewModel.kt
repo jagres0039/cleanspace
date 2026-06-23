@@ -82,11 +82,14 @@ class LargestFilesViewModel @Inject constructor(
     fun delete(ids: List<String>) {
         viewModelScope.launch {
             val idSet = ids.toSet()
-            val uris = scanned.filter { it.id.toString() in idSet }.map { it.uri }
-            if (uris.isEmpty()) return@launch
-            // Guard the system delete-request build so a thrown error can't crash the app.
-            runCatching { repo.trashOrDelete(uris) }
-                .onSuccess { sender -> if (sender != null) _confirm.emit(sender) else load() }
+            val targets = scanned.filter { it.id.toString() in idSet }
+            if (targets.isEmpty()) return@launch
+            // Media \u2192 system trash; non-media (zip/apk/docs) \u2192 deleted by path.
+            // Guarded so a thrown delete-request can't crash the app.
+            runCatching { repo.deleteScanned(targets) }
+                .onSuccess { outcome ->
+                    if (outcome.confirmRequest != null) _confirm.emit(outcome.confirmRequest) else load()
+                }
                 .onFailure { _state.value = ScanUiState.Error(it.message ?: "Gagal menghapus") }
         }
     }
