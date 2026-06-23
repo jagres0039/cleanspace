@@ -1,6 +1,10 @@
 package com.cleanspace.app.ui.screens.duplicates
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,9 +26,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.cleanspace.app.ui.components.BrandGradient
 import com.cleanspace.app.ui.components.CsButton
 import com.cleanspace.app.ui.components.CsButtonStyle
@@ -45,6 +52,8 @@ data class DuplicateItem(
     val name: String,
     val meta: String,
     val isBest: Boolean,
+    val previewUri: String? = null,
+    val mime: String? = null,
 )
 
 data class DuplicateGroup(
@@ -78,7 +87,7 @@ fun DuplicateFinderScreen(
             ) {
                 item {
                     CsCallout(
-                        text = "Salinan terbaik (resolusi/ukuran tertinggi) otomatis dipertahankan. Sisanya dipilih buat dihapus.",
+                        text = "Salinan terbaik (resolusi/ukuran tertinggi) otomatis dipertahankan. Sisanya dipilih buat dihapus. Tap thumbnail buat lihat isinya.",
                         tone = CsCalloutTone.Success,
                         icon = CsIcons.Sparkles,
                     )
@@ -125,11 +134,27 @@ fun DuplicateFinderScreen(
     }
 }
 
+private fun openPreview(context: Context, uri: String?, mime: String?) {
+    if (uri == null) return
+    runCatching {
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(Uri.parse(uri), mime ?: "*/*")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
+}
+
 @Composable
 private fun DuplicateRow(item: DuplicateItem) {
     val ext = MaterialTheme.colorsExt
+    val context = LocalContext.current
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Dimens.space14, vertical = Dimens.space12),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = item.previewUri != null) { openPreview(context, item.previewUri, item.mime) }
+            .padding(horizontal = Dimens.space14, vertical = Dimens.space12),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -139,12 +164,21 @@ private fun DuplicateRow(item: DuplicateItem) {
                 .background(if (item.isBest) ext.success.copy(alpha = 0.14f) else ext.surfaceHover),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                if (item.isBest) CsIcons.ShieldCheck else CsIcons.Image,
-                contentDescription = null,
-                tint = if (item.isBest) ext.success else ext.textSoft,
-                modifier = Modifier.size(18.dp),
-            )
+            if (item.previewUri != null) {
+                AsyncImage(
+                    model = item.previewUri,
+                    contentDescription = item.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Icon(
+                    if (item.isBest) CsIcons.ShieldCheck else CsIcons.Image,
+                    contentDescription = null,
+                    tint = if (item.isBest) ext.success else ext.textSoft,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
         }
         Spacer(Modifier.size(Dimens.space12))
         Column(Modifier.weight(1f)) {
