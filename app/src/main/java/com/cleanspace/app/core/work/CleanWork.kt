@@ -26,4 +26,9 @@ object CleanWork {
             request,
         )
     }
+
+    /** Cancels the daily background scan (used when the user disables it in Settings). */
+    fun cancelPeriodicScan(context: Context) {
+        WorkManager.getInstance(context).cancelUniqueWork(SCAN_WORK)
+    }
 }
