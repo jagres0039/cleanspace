@@ -18,6 +18,26 @@ fun formatBytes(bytes: Long): String {
     }
 }
 
+/**
+ * Human-readable byte size using base-1000 (SI) units, the way stock Android
+ * file managers and manufacturers report storage capacity. e.g.
+ * 128_000_000_000 -> "128 GB". Use this for device storage totals so our numbers
+ * match the built-in file manager (which would otherwise read ~119 GB for a
+ * "128 GB" phone when using base-1024).
+ */
+fun formatBytesSi(bytes: Long): String {
+    if (bytes <= 0L) return "0 B"
+    val units = arrayOf("B", "KB", "MB", "GB", "TB")
+    val digitGroups = (ln(bytes.toDouble()) / ln(1000.0)).toInt().coerceIn(0, units.size - 1)
+    val value = bytes / 1000.0.pow(digitGroups.toDouble())
+    return if (digitGroups == 0) {
+        "${bytes} B"
+    } else {
+        val rounded = (value * 10).toLong() / 10.0
+        "${rounded} ${units[digitGroups]}"
+    }
+}
+
 /** Compact relative "last used / modified" label from an epoch-millis timestamp. */
 fun formatRelativeTime(epochMillis: Long, now: Long = System.currentTimeMillis()): String {
     if (epochMillis <= 0L) return "—"
