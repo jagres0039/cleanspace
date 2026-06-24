@@ -11,6 +11,7 @@ import com.cleanspace.app.ui.icons.CsIcons
 import com.cleanspace.app.ui.theme.CsPalette
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -25,10 +26,16 @@ class DashboardViewModel @Inject constructor(
     private val _state = MutableStateFlow<ScanUiState<DashboardState>>(ScanUiState.Loading)
     val state = _state.asStateFlow()
 
+    // Tracks the in-flight scan so resume-triggered reloads don't pile up
+    // multiple heavy scans at once (which made the screen feel stuck).
+    private var loadJob: Job? = null
+
     init { load() }
 
     fun load() {
-        viewModelScope.launch {
+        // Skip if a scan is already running; the next resume will refresh again.
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
             if (!CsPermissions.hasMediaAccess(context)) {
                 _state.value = ScanUiState.NeedsPermission
                 return@launch
