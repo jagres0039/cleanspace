@@ -126,7 +126,7 @@ class ScanRepository @Inject constructor(
         }
         // Drop the MediaStore row so it doesn't linger in future scans.
         runCatching { context.contentResolver.delete(file.uri, null, null) }
-        removed
+        return removed
     }
 
     /**
