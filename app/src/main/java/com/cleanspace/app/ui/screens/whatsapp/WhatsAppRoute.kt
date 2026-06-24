@@ -4,11 +4,15 @@ import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.cleanspace.app.ui.common.DeletingOverlay
 import com.cleanspace.app.ui.common.ScanLoading
 import com.cleanspace.app.ui.common.ScanMessage
 import com.cleanspace.app.ui.common.ScanUiState
@@ -20,6 +24,7 @@ fun WhatsAppRoute(
     vm: WhatsAppViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
+    val deleting by vm.deleting.collectAsState()
 
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -33,36 +38,39 @@ fun WhatsAppRoute(
         }
     }
 
-    when (val s = state) {
-        is ScanUiState.Loading -> ScanLoading("WhatsApp", "Memindai media WhatsApp…", onBack)
-        is ScanUiState.NeedsPermission -> ScanMessage(
-            title = "WhatsApp",
-            message = "Butuh izin akses media buat memindai folder WhatsApp.",
-            icon = CsIcons.ShieldCheck,
-            onBack = onBack,
-        )
-        is ScanUiState.Error -> ScanMessage(
-            title = "WhatsApp",
-            message = s.message,
-            actionLabel = "Coba lagi",
-            onAction = { vm.load() },
-            onBack = onBack,
-        )
-        is ScanUiState.Ready -> {
-            if (s.data.isEmpty()) {
-                ScanMessage(
-                    title = "WhatsApp",
-                    message = "Nggak nemu media WhatsApp yang numpuk. Bersih! 🎉",
-                    icon = CsIcons.CheckCircle,
-                    onBack = onBack,
-                )
-            } else {
-                WhatsAppCleanerScreen(
-                    items = s.data,
-                    onBack = onBack,
-                    onClean = { ids -> vm.delete(ids) },
-                )
+    Box(Modifier.fillMaxSize()) {
+        when (val s = state) {
+            is ScanUiState.Loading -> ScanLoading("WhatsApp", "Memindai media WhatsApp…", onBack)
+            is ScanUiState.NeedsPermission -> ScanMessage(
+                title = "WhatsApp",
+                message = "Butuh izin akses media buat memindai folder WhatsApp.",
+                icon = CsIcons.ShieldCheck,
+                onBack = onBack,
+            )
+            is ScanUiState.Error -> ScanMessage(
+                title = "WhatsApp",
+                message = s.message,
+                actionLabel = "Coba lagi",
+                onAction = { vm.load() },
+                onBack = onBack,
+            )
+            is ScanUiState.Ready -> {
+                if (s.data.isEmpty()) {
+                    ScanMessage(
+                        title = "WhatsApp",
+                        message = "Nggak nemu media WhatsApp yang numpuk. Bersih! 🎉",
+                        icon = CsIcons.CheckCircle,
+                        onBack = onBack,
+                    )
+                } else {
+                    WhatsAppCleanerScreen(
+                        items = s.data,
+                        onBack = onBack,
+                        onClean = { ids -> vm.delete(ids) },
+                    )
+                }
             }
         }
+        DeletingOverlay(visible = deleting)
     }
 }
