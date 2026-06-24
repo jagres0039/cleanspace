@@ -82,9 +82,27 @@ fun LargestFilesScreen(
     val context = LocalContext.current
     val selected = remember { mutableStateMapOf<String, Boolean>() }
     val selectedIds = selected.filterValues { it }.keys.toList()
+    val allSelected = files.isNotEmpty() && files.all { selected[it.id] == true }
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
             CsTopBar(title = title, onBack = onBack, actionIcon = CsIcons.Search, onAction = {})
+            if (files.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { val target = !allSelected; files.forEach { selected[it.id] = target } }
+                        .padding(horizontal = Dimens.screenPaddingH, vertical = Dimens.space8),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        if (allSelected) "Batalkan semua" else "Pilih semua (${files.size})",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    CsCheckbox(checked = allSelected, onCheckedChange = { target -> files.forEach { selected[it.id] = target } })
+                }
+            }
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
