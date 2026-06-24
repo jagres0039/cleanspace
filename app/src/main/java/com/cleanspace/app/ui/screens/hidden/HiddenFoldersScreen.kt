@@ -1,6 +1,7 @@
 package com.cleanspace.app.ui.screens.hidden
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,9 +69,27 @@ fun HiddenFoldersScreen(
         }
     }
     val selectedIds = selected.filterValues { it }.keys.toList()
+    val allSelected = folders.isNotEmpty() && folders.all { selected[it.id] == true }
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
             CsTopBar(title = "Folder tersembunyi", onBack = onBack, actionIcon = CsIcons.Refresh, onAction = {})
+            if (folders.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { val target = !allSelected; folders.forEach { selected[it.id] = target } }
+                        .padding(horizontal = Dimens.screenPaddingH, vertical = Dimens.space8),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        if (allSelected) "Batalkan semua" else "Pilih semua (${folders.size})",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    CsCheckbox(checked = allSelected, onCheckedChange = { target -> folders.forEach { selected[it.id] = target } })
+                }
+            }
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(
