@@ -1,9 +1,13 @@
 package com.cleanspace.app.ui.screens.storage
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.cleanspace.app.ui.common.ScanLoading
 import com.cleanspace.app.ui.common.ScanMessage
 import com.cleanspace.app.ui.common.ScanUiState
@@ -16,6 +20,17 @@ fun StorageOverviewRoute(
     vm: StorageOverviewViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
+
+    // Re-scan whenever this screen becomes visible again (e.g. after deleting
+    // files elsewhere). Previous numbers stay on screen while it refreshes.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) vm.load()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     when (val s = state) {
         is ScanUiState.Loading -> ScanLoading("Penyimpanan", "Menghitung penggunaan penyimpanan…", onBack)
