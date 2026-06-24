@@ -28,8 +28,7 @@ import com.cleanspace.app.ui.ads.LocalAdController
 import com.cleanspace.app.ui.components.CsBottomNav
 import com.cleanspace.app.ui.components.CsBottomNavItems
 import com.cleanspace.app.ui.screens.apps.AppManagerRoute
-import com.cleanspace.app.ui.screens.clean.CleanHubScreen
-import com.cleanspace.app.ui.screens.clean.cleanTools
+import com.cleanspace.app.ui.screens.clean.CleanHubRoute
 import com.cleanspace.app.ui.screens.dashboard.DashboardRoute
 import com.cleanspace.app.ui.screens.done.DoneScreen
 import com.cleanspace.app.ui.screens.done.sampleNextSteps
@@ -199,8 +198,7 @@ private fun NavGraphBuilder.csGraph(
         )
     }
     composable(Routes.CLEAN) {
-        CleanHubScreen(
-            tools = cleanTools(),
+        CleanHubRoute(
             onToolClick = { tool -> navigate(tool.route) },
             onDeepClean = { navigate(Routes.SCANNING) },
         )
