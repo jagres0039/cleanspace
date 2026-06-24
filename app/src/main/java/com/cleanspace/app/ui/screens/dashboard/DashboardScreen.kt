@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.cleanspace.app.ui.components.CsButton
+import com.cleanspace.app.ui.components.CsButtonStyle
 import com.cleanspace.app.ui.components.CsCard
 import com.cleanspace.app.ui.components.CsListRow
 import com.cleanspace.app.ui.components.CsSectionLabel
@@ -53,6 +55,8 @@ data class DashboardState(
 fun DashboardScreen(
     state: DashboardState,
     modifier: Modifier = Modifier,
+    refreshing: Boolean = false,
+    onManualScan: () -> Unit = {},
     onRecommendationClick: (Recommendation) -> Unit = {},
 ) {
     val ext = MaterialTheme.colorsExt
@@ -82,6 +86,14 @@ fun DashboardScreen(
                     style = MaterialTheme.typography.titleSmall,
                     color = CsPalette.BrandGreen,
                     textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(Dimens.space12))
+                CsButton(
+                    label = if (refreshing) "Memindai\u2026" else "Pindai ulang",
+                    onClick = onManualScan,
+                    style = CsButtonStyle.Secondary,
+                    leadingIcon = CsIcons.Refresh,
+                    enabled = !refreshing,
                 )
             }
         }
