@@ -48,6 +48,10 @@ class LargestFilesViewModel @Inject constructor(
     private val _confirm = MutableSharedFlow<IntentSender>(extraBufferCapacity = 1)
     val confirm = _confirm.asSharedFlow()
 
+    // True while a delete is running so the UI can show the "Menghapus\u2026" overlay.
+    private val _deleting = MutableStateFlow(false)
+    val deleting = _deleting.asStateFlow()
+
     private var scanned: List<ScannedFile> = emptyList()
 
     init { load() }
@@ -86,11 +90,16 @@ class LargestFilesViewModel @Inject constructor(
             if (targets.isEmpty()) return@launch
             // Media \u2192 system trash; non-media (zip/apk/docs) \u2192 deleted by path.
             // Guarded so a thrown delete-request can't crash the app.
-            runCatching { repo.deleteScanned(targets) }
-                .onSuccess { outcome ->
-                    if (outcome.confirmRequest != null) _confirm.emit(outcome.confirmRequest) else load()
-                }
-                .onFailure { _state.value = ScanUiState.Error(it.message ?: "Gagal menghapus") }
+            _deleting.value = true
+            try {
+                runCatching { repo.deleteScanned(targets) }
+                    .onSuccess { outcome ->
+                        if (outcome.confirmRequest != null) _confirm.emit(outcome.confirmRequest) else load()
+                    }
+                    .onFailure { _state.value = ScanUiState.Error(it.message ?: "Gagal menghapus") }
+            } finally {
+                _deleting.value = false
+            }
         }
     }
 
