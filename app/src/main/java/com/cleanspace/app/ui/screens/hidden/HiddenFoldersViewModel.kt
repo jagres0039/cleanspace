@@ -22,6 +22,10 @@ class HiddenFoldersViewModel @Inject constructor(
     private val _state = MutableStateFlow<ScanUiState<List<HiddenFolder>>>(ScanUiState.Loading)
     val state = _state.asStateFlow()
 
+    // True while a delete is running so the UI can show the "Menghapus\u2026" overlay.
+    private val _deleting = MutableStateFlow(false)
+    val deleting = _deleting.asStateFlow()
+
     init { load() }
 
     fun load() {
@@ -41,8 +45,13 @@ class HiddenFoldersViewModel @Inject constructor(
     fun delete(ids: List<String>) {
         viewModelScope.launch {
             if (ids.isEmpty()) return@launch
-            runCatching { repo.deletePaths(ids) }
-            load()
+            _deleting.value = true
+            try {
+                runCatching { repo.deletePaths(ids) }
+                load()
+            } finally {
+                _deleting.value = false
+            }
         }
     }
 
