@@ -13,6 +13,7 @@ import com.cleanspace.app.ui.common.iconFor
 import com.cleanspace.app.ui.common.tintFor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -27,18 +28,27 @@ class StorageOverviewViewModel @Inject constructor(
     private val _state = MutableStateFlow<ScanUiState<StorageOverviewState>>(ScanUiState.Loading)
     val state = _state.asStateFlow()
 
+    // Tracks the in-flight scan so resume-triggered reloads don't stack up.
+    private var loadJob: Job? = null
+
     init { load() }
 
     fun load() {
-        viewModelScope.launch {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
             if (!CsPermissions.hasMediaAccess(context)) {
                 _state.value = ScanUiState.NeedsPermission
                 return@launch
             }
-            _state.value = ScanUiState.Loading
+            // Keep showing the previous breakdown while refreshing (no spinner flash).
+            if (_state.value !is ScanUiState.Ready) _state.value = ScanUiState.Loading
             runCatching { repo.storageSummary() }
                 .onSuccess { _state.value = ScanUiState.Ready(it.toOverview()) }
-                .onFailure { _state.value = ScanUiState.Error(it.message ?: "Gagal membaca penyimpanan") }
+                .onFailure {
+                    if (_state.value !is ScanUiState.Ready) {
+                        _state.value = ScanUiState.Error(it.message ?: "Gagal membaca penyimpanan")
+                    }
+                }
         }
     }
 
