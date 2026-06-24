@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cleanspace.app.core.permissions.CsPermissions
 import com.cleanspace.app.core.scan.StorageScanner
-import com.cleanspace.app.core.util.formatBytes
+import com.cleanspace.app.core.util.formatBytesSi
 import com.cleanspace.app.data.ScanRepository
 import com.cleanspace.app.ui.common.ScanUiState
 import com.cleanspace.app.ui.common.categoryLabel
@@ -58,15 +58,15 @@ class StorageOverviewViewModel @Inject constructor(
             .sortedByDescending { it.value }
         val totalCat = cats.sumOf { it.value }.coerceAtLeast(1L)
         return StorageOverviewState(
-            usedLabel = "${formatBytes(usedBytes)} terpakai",
-            freeLabel = formatBytes(freeBytes),
+            usedLabel = "${formatBytesSi(usedBytes)} terpakai",
+            freeLabel = formatBytesSi(freeBytes),
             categories = cats.map { (cat, bytes) ->
                 StorageCategory(
                     id = cat.name,
                     icon = iconFor(cat),
                     color = tintFor(cat),
                     name = categoryLabel(cat),
-                    sizeLabel = formatBytes(bytes),
+                    sizeLabel = formatBytesSi(bytes),
                     fraction = (bytes.toDouble() / totalCat).toFloat(),
                 )
             },
