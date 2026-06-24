@@ -29,6 +29,7 @@ fun DashboardRoute(
     vm: DashboardViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
+    val refreshing by vm.refreshing.collectAsState()
 
     // Re-scan every time the dashboard becomes visible again (e.g. after
     // deleting duplicates/large files on another screen). load() keeps the
@@ -46,7 +47,7 @@ fun DashboardRoute(
         is ScanUiState.Loading -> DashboardCenter {
             CircularProgressIndicator(color = CsPalette.BrandGreen)
             Text(
-                "Menganalisis penyimpanan…",
+                "Menganalisis penyimpanan\u2026",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -70,6 +71,8 @@ fun DashboardRoute(
         }
         is ScanUiState.Ready -> DashboardScreen(
             state = s.data,
+            refreshing = refreshing,
+            onManualScan = { vm.refresh() },
             onRecommendationClick = onRecommendationClick,
         )
     }
