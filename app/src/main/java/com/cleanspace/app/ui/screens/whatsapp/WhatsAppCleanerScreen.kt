@@ -93,6 +93,7 @@ fun WhatsAppCleanerScreen(
 
     val visible = if (filterIndex == 0) items else items.filter { it.type == WaMediaType.values()[filterIndex - 1] }
     val selectedIds = selected.filterValues { it }.keys.toList()
+    val allVisibleSelected = visible.isNotEmpty() && visible.all { selected[it.id] == true }
 
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
@@ -103,6 +104,23 @@ fun WhatsAppCleanerScreen(
                     selectedIndex = filterIndex,
                     onSelect = { filterIndex = it },
                 )
+            }
+            if (visible.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { val target = !allVisibleSelected; visible.forEach { selected[it.id] = target } }
+                        .padding(horizontal = Dimens.screenPaddingH, vertical = Dimens.space8),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        if (allVisibleSelected) "Batalkan semua" else "Pilih semua (${visible.size})",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    CsCheckbox(checked = allVisibleSelected, onCheckedChange = { target -> visible.forEach { selected[it.id] = target } })
+                }
             }
             LazyColumn(
                 modifier = Modifier.weight(1f),
