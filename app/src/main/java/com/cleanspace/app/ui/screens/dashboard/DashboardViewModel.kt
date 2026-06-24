@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.cleanspace.app.core.permissions.CsPermissions
 import com.cleanspace.app.core.util.formatBytes
+import com.cleanspace.app.core.util.formatBytesSi
 import com.cleanspace.app.data.ScanRepository
 import com.cleanspace.app.ui.common.ScanUiState
 import com.cleanspace.app.ui.icons.CsIcons
@@ -25,6 +26,11 @@ class DashboardViewModel @Inject constructor(
 
     private val _state = MutableStateFlow<ScanUiState<DashboardState>>(ScanUiState.Loading)
     val state = _state.asStateFlow()
+
+    // True while a manual "Pindai ulang" is running, so the dashboard can show a
+    // spinner on the rescan button without blocking the rest of the UI.
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing = _refreshing.asStateFlow()
 
     // Tracks the in-flight scan so resume-triggered reloads don't pile up
     // multiple heavy scans at once (which made the screen feel stuck).
@@ -56,6 +62,30 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Manual rescan triggered by the dashboard's "Pindai ulang" button. Cancels
+     * any in-flight scan and forces a fresh full scan, surfacing a spinner via
+     * [refreshing] while it runs. Previous numbers stay on screen meanwhile.
+     */
+    fun refresh() {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            if (!CsPermissions.hasMediaAccess(context)) {
+                _state.value = ScanUiState.NeedsPermission
+                return@launch
+            }
+            _refreshing.value = true
+            try {
+                runCatching { repo.quickGlance() }
+                    .onSuccess { _state.value = ScanUiState.Ready(it.toState()) }
+                runCatching { repo.dashboard() }
+                    .onSuccess { _state.value = ScanUiState.Ready(it.toState()) }
+            } finally {
+                _refreshing.value = false
+            }
+        }
+    }
+
     private fun ScanRepository.DashboardData.toState(): DashboardState {
         val recs = buildList {
             if (junkAndCacheBytes > 0) add(
@@ -72,8 +102,8 @@ class DashboardViewModel @Inject constructor(
             )
         }
         return DashboardState(
-            usedLabel = formatBytes(summary.usedBytes),
-            totalLabel = "dari ${formatBytes(summary.totalBytes)}",
+            usedLabel = formatBytesSi(summary.usedBytes),
+            totalLabel = "dari ${formatBytesSi(summary.totalBytes)}",
             usedFraction = summary.usedFraction,
             reclaimableLabel = formatBytes(reclaimableBytes),
             recommendations = recs,
