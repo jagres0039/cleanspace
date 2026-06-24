@@ -42,7 +42,17 @@ class StorageScanner(private val context: Context) {
             val ssm = context.getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
             val uuid = StorageManager.UUID_DEFAULT
             val total = ssm.getTotalBytes(uuid)
-            val free = ssm.getFreeBytes(uuid)
+
+            // Stock file managers (iQOO, Xiaomi, Samsung, etc.) report \"available\"
+            // as free space PLUS reclaimable cache, via StorageManager
+            // .getAllocatableBytes(). We mirror that so our number matches what the
+            // user sees in their system file manager. Fall back to the raw free
+            // bytes whenever allocatable is unavailable or smaller.
+            val rawFree = ssm.getFreeBytes(uuid)
+            val sm = context.getSystemService(Context.STORAGE_SERVICE) as? StorageManager
+            val allocatable = runCatching { sm?.getAllocatableBytes(uuid) ?: -1L }
+                .getOrDefault(-1L)
+            val free = if (allocatable > rawFree) allocatable else rawFree
             total to free
         } catch (_: Exception) {
             // Fallback to StatFs on the data directory.
