@@ -37,6 +37,10 @@ class DuplicateFinderViewModel @Inject constructor(
     private val _confirm = MutableSharedFlow<IntentSender>(extraBufferCapacity = 1)
     val confirm = _confirm.asSharedFlow()
 
+    // True while a delete is running so the UI can show the "Menghapus\u2026" overlay.
+    private val _deleting = MutableStateFlow(false)
+    val deleting = _deleting.asStateFlow()
+
     private var sets: List<DuplicateSet> = emptyList()
 
     init { load() }
@@ -72,15 +76,20 @@ class DuplicateFinderViewModel @Inject constructor(
             // Wrap the delete-request build: some OEM ROMs throw here, and an
             // uncaught error in this coroutine would crash + restart the app
             // (looked like "kembali ke home"). On failure we show an error instead.
-            runCatching { repo.deleteScanned(targets) }
-                .onSuccess { outcome ->
-                    if (outcome.confirmRequest != null) _confirm.emit(outcome.confirmRequest) else load()
-                }
-                .onFailure {
-                    _state.value = ScanUiState.Error(
-                        it.message ?: "Gagal menghapus duplikat. Coba lagi.",
-                    )
-                }
+            _deleting.value = true
+            try {
+                runCatching { repo.deleteScanned(targets) }
+                    .onSuccess { outcome ->
+                        if (outcome.confirmRequest != null) _confirm.emit(outcome.confirmRequest) else load()
+                    }
+                    .onFailure {
+                        _state.value = ScanUiState.Error(
+                            it.message ?: "Gagal menghapus duplikat. Coba lagi.",
+                        )
+                    }
+            } finally {
+                _deleting.value = false
+            }
         }
     }
 
