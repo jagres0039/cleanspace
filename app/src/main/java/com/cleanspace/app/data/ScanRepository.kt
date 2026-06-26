@@ -104,7 +104,27 @@ class ScanRepository @Inject constructor(
             }
         }
 
-        val request = if (mediaItems.isNotEmpty()) trashOrDelete(mediaItems.map { it.uri }) else null
+        // Media \u2192 restorable system trash via ONE dialog. BUT some "media" files
+        // are only indexed in the generic Files table \u2014 e.g. WhatsApp .opus/.amr
+        // voice notes \u2014 so their typed images/video/audio uri is rejected with
+        // "Invalid Uri" by createTrashRequest/createDeleteRequest, which blows up
+        // the WHOLE batch. If building that request throws, fall back to deleting
+        // those items by path (we hold All-files access) so a few stale rows can't
+        // block the entire delete.
+        val request: IntentSender? = if (mediaItems.isNotEmpty()) {
+            runCatching { trashOrDelete(mediaItems.map { it.uri }) }
+                .getOrElse {
+                    for (f in mediaItems) {
+                        if (deleteOneByPath(f)) {
+                            deletedCount++
+                            deletedBytes += f.sizeBytes
+                        }
+                    }
+                    null
+                }
+        } else {
+            null
+        }
         DeleteOutcome(
             confirmRequest = request,
             directDeletedCount = deletedCount,
@@ -144,7 +164,7 @@ class ScanRepository @Inject constructor(
 
     /**
      * Size of CleanSpace's OWN cache (internal + external). This is the only
-     * cache we are allowed to clear silently — third-party app caches can't be
+     * cache we are allowed to clear silently \u2014 third-party app caches can't be
      * touched without the system Settings UI (Play policy compliant).
      */
     fun ownCacheBytes(): Long =
@@ -183,11 +203,11 @@ class ScanRepository @Inject constructor(
         val junkCount: Int,
         val ownCacheBytes: Long,
     ) {
-        /** Junk files + CleanSpace's own cache — the part we can clean directly. */
+        /** Junk files + CleanSpace's own cache \u2014 the part we can clean directly. */
         val junkAndCacheBytes: Long get() = junkBytes + ownCacheBytes
 
         /**
-         * Conservative “safe to reclaim” estimate: duplicates + WhatsApp media +
+         * Conservative \u201csafe to reclaim\u201d estimate: duplicates + WhatsApp media +
          * junk (temp/thumbnails/leftovers) + the app's own cache. Excludes other
          * apps' caches, which Android won't let us delete silently.
          */
@@ -196,7 +216,7 @@ class ScanRepository @Inject constructor(
     }
 
     /**
-     * Fast first-paint pass for the dashboard: one media scan → storage summary,
+     * Fast first-paint pass for the dashboard: one media scan \u2192 storage summary,
      * large files, WhatsApp media + own cache. Skips the expensive duplicate
      * hashing and hidden-folder walk so the screen appears almost instantly;
      * [dashboard] then refines those numbers in the background.
