@@ -8,17 +8,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -26,6 +27,7 @@ import com.cleanspace.app.ui.icons.CsIcons
 import com.cleanspace.app.ui.theme.CsPalette
 import com.cleanspace.app.ui.theme.Dimens
 import com.cleanspace.app.ui.theme.colorsExt
+import com.cleanspace.app.ui.theme.neuRaised
 
 /** Lightweight top app bar: optional back button, title, optional trailing action. */
 @Composable
@@ -67,6 +69,14 @@ private fun CsAppBarButton(icon: ImageVector, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(Dimens.appbarIcon)
+            .neuRaised(
+                backgroundColor = ext.neuBg,
+                shadowDark = ext.neuShadowDark,
+                shadowLight = ext.neuShadowLight,
+                cornerRadius = Dimens.radiusChip,
+                elevation = 4.dp,
+            )
+            .clip(RoundedCornerShape(Dimens.radiusChip))
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -95,13 +105,12 @@ fun CsBottomNav(
     modifier: Modifier = Modifier,
 ) {
     val ext = MaterialTheme.colorsExt
-    Column(modifier = modifier.fillMaxWidth().background(ext.surface)) {
-        Box(Modifier.fillMaxWidth().height(Dimens.borderHairline).background(ext.border))
+    Column(modifier = modifier.fillMaxWidth().background(ext.neuBg)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(vertical = Dimens.space8),
+                .padding(horizontal = Dimens.space8, vertical = Dimens.space8),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             items.forEach { item ->
@@ -109,8 +118,17 @@ fun CsBottomNav(
                 val tint = if (selected) CsPalette.BrandGreen else ext.textFaint
                 Column(
                     modifier = Modifier
+                        .let {
+                            if (selected) it.neuRaised(
+                                backgroundColor = ext.neuBg,
+                                shadowDark = ext.neuShadowDark,
+                                shadowLight = ext.neuShadowLight,
+                                cornerRadius = Dimens.radiusChip,
+                                elevation = 3.dp,
+                            ).clip(RoundedCornerShape(Dimens.radiusChip)) else it
+                        }
                         .clickable { onSelect(item) }
-                        .padding(horizontal = Dimens.space12, vertical = Dimens.space4),
+                        .padding(horizontal = Dimens.space14, vertical = Dimens.space6),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(item.icon, contentDescription = item.label, tint = tint, modifier = Modifier.size(22.dp))
