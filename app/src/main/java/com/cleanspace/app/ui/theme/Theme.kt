@@ -10,17 +10,22 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
+/**
+ * Soft UI / Neumorphism scheme. Surfaces share the soft background color; depth
+ * comes from the neumorphism shadow helpers rather than contrasting surfaces or
+ * borders. Dynamic color stays disabled to keep the green brand consistent.
+ */
 private val LightColorScheme = lightColorScheme(
-    primary = CsPalette.Chart3,
+    primary = CsPalette.BrandGreen,
     onPrimary = Color.White,
     secondary = CsPalette.LightBlue,
     error = CsPalette.Chart8,
-    background = CsPalette.LightBg,
-    onBackground = CsPalette.LightText,
-    surface = CsPalette.LightSurface,
-    onSurface = CsPalette.LightText,
-    surfaceVariant = CsPalette.LightBgSoft,
-    outline = CsPalette.LightBorder,
+    background = CsPalette.NeuLightBg,
+    onBackground = CsPalette.NeuLightText,
+    surface = CsPalette.NeuLightBg,
+    onSurface = CsPalette.NeuLightText,
+    surfaceVariant = CsPalette.NeuLightBg,
+    outline = Color(0x00000000),
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -28,12 +33,12 @@ private val DarkColorScheme = darkColorScheme(
     onPrimary = Color.White,
     secondary = CsPalette.DarkBlue,
     error = CsPalette.Chart8,
-    background = CsPalette.DarkBg,
-    onBackground = CsPalette.DarkText,
-    surface = CsPalette.DarkSurface,
-    onSurface = CsPalette.DarkText,
-    surfaceVariant = CsPalette.DarkBgSoft,
-    outline = CsPalette.DarkBorder,
+    background = CsPalette.NeuDarkBg,
+    onBackground = CsPalette.NeuDarkText,
+    surface = CsPalette.NeuDarkBg,
+    onSurface = CsPalette.NeuDarkText,
+    surfaceVariant = CsPalette.NeuDarkBg,
+    outline = Color(0x00000000),
 )
 
 val LocalCsExtendedColors = staticCompositionLocalOf { LightExtendedColors }
@@ -41,7 +46,6 @@ val LocalCsExtendedColors = staticCompositionLocalOf { LightExtendedColors }
 /**
  * Root theme. Wraps the app in the CleanSpace Material 3 scheme plus the
  * extended (non-Material) color set. Follows the system dark/light setting.
- * Dynamic color is intentionally disabled to keep the green brand consistent.
  */
 @Composable
 fun CleanSpaceTheme(
