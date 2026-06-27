@@ -53,9 +53,9 @@ fun StorageRing(
             val inset = stroke / 2f
             val arcSize = Size(size.width - stroke, size.height - stroke)
             val topLeft = Offset(inset, inset)
-            // track
+            // track (sunken groove tone)
             drawArc(
-                color = ext.surfaceHover,
+                color = ext.neuShadowDark,
                 startAngle = 0f,
                 sweepAngle = 360f,
                 useCenter = false,
